@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REALM OF SHADOWS - ファンタジーRPG</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050510;display:flex;justify-content:center;padding:20px;min-height:100vh}
+#rpg{font-family:'Georgia',serif;background:#080810;color:#e8d5a3;min-height:620px;width:100%;max-width:700px}
+#rpg .sc{display:none;padding:12px}
+#rpg .sc.on{display:block}
+.tile{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:3px;cursor:pointer;border:1px solid transparent}
+.tile:hover{filter:brightness(1.4)}
+.tile.wall{background:#111122;cursor:default}
+.tile.floor{background:#13132a}
+.tile.dark{background:#060610;filter:brightness(0.3)}
+.tile.player{background:#0f3460;border-color:#e94560}
+.tile.chest{background:#2a1a0a;border-color:#f5a623}
+.tile.enemy{background:#2a0808;border-color:#c0392b}
+.tile.boss{background:#3a0a3a;border-color:#9c27b0;animation:pulse 1s infinite}
+.tile.exit{background:#0a2a1a;border-color:#4caf50}
+.tile.shop{background:#1a0a2a;border-color:#9c27b0}
+.tile.npc{background:#0a1a2a;border-color:#2196f3}
+.tile.save{background:#0a2a2a;border-color:#00bcd4}
+@keyframes pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.5)}}
+#hud{background:#0d0d1f;border:1px solid #2a2a4a;border-radius:8px;padding:8px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hi{font-size:11px;color:#888}
+.hi b{color:#e8d5a3;font-size:13px}
+.bw{flex:1;min-width:80px}
+.bar{height:8px;border-radius:4px;background:#1a1a2e;overflow:hidden;margin-top:2px}
+.bf{height:100%;border-radius:4px;transition:width .3s}
+.hpb{background:#c0392b}
+.mpb{background:#1a5276}
+.xpb{background:#7d6608}
+#log{background:#04040e;border:1px solid #1a1a2e;border-radius:6px;padding:6px 10px;height:72px;overflow-y:auto;font-size:11px;color:#999;margin-bottom:6px}
+#log p{margin:1px 0}
+#log .g{color:#27ae60}
+#log .r{color:#c0392b}
+#log .b{color:#8e44ad}
+#log .y{color:#e67e22}
+#log .c{color:#16a085}
+.dpad{display:grid;grid-template-columns:repeat(3,36px);gap:3px}
+.dpad button{width:36px;height:36px;background:#13132a;border:1px solid #2a2a4a;border-radius:5px;color:#e8d5a3;font-size:14px;cursor:pointer}
+.dpad button:hover{background:#0f3460}
+.dpad button:active{transform:scale(.9)}
+#mc{display:grid;gap:2px;margin:6px 0}
+.mon{font-size:56px;text-align:center;margin:10px 0;animation:bob 1.5s infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.mon.sk{animation:shk .35s}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pa{font-size:40px;text-align:center;margin:4px 0}
+.pa.at{animation:lng .35s}
+@keyframes lng{50%{transform:translateX(18px)}}
+.btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.btns button{padding:7px 14px;background:#13132a;border:1px solid #444;border-radius:6px;color:#e8d5a3;cursor:pointer;font-size:13px;font-family:Georgia,serif}
+.btns button:hover{background:#0f3460;border-color:#e94560}
+.btns button:disabled{opacity:.4;cursor:default}
+.shoprow{background:#0d0d1f;border:1px solid #333;border-radius:7px;padding:8px 12px;margin:5px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.shoprow button{padding:5px 12px;background:#7b1fa2;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px}
+.shoprow button:hover{background:#6a1b9a}
+.shoprow button:disabled{background:#333;cursor:default}
+#title-sc{text-align:center;padding:30px 16px}
+#title-sc h1{font-size:28px;color:#f5a623;margin-bottom:6px}
+#title-sc .sub{color:#888;font-size:13px;margin-bottom:24px}
+#title-sc .start-btn{padding:12px 28px;background:#e94560;border:none;border-radius:8px;color:#fff;font-size:16px;cursor:pointer;font-family:Georgia,serif}
+#title-sc .start-btn:hover{background:#c0392b}
+.ebtn{padding:10px 24px;background:#13132a;border:1px solid #444;border-radius:7px;color:#e8d5a3;font-size:15px;cursor:pointer;margin-top:16px;font-family:Georgia,serif}
+.ebtn:hover{background:#0f3460}
+#go-sc,#win-sc{text-align:center;padding:40px 16px}
+#go-sc h2{color:#e94560;font-size:26px}
+#win-sc h2{color:#f5a623;font-size:26px}
+.ivbox{background:#0d0d1f;border:1px solid #2a2a4a;border-radius:7px;padding:8px 10px;margin-top:6px}
+.iv-title{font-size:11px;color:#666;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.itm{display:inline-block;background:#13132a;border:1px solid #444;border-radius:5px;padding:3px 8px;margin:2px;font-size:12px;cursor:pointer}
+.itm:hover{border-color:#f5a623}
+.skill-btn{padding:6px 10px;background:#16213e;border:1px solid #444;border-radius:5px;color:#e8d5a3;cursor:pointer;font-size:12px;font-family:Georgia,serif;margin:2px}
+.skill-btn:hover{background:#0f3460;border-color:#9c27b0}
+.skill-btn:disabled{opacity:.35;cursor:default}
+.qrow{background:#0d0d1f;border:1px solid #2a2a4a;border-radius:7px;padding:8px 12px;margin:4px 0;font-size:13px}
+.qrow.done{border-color:#27ae60;color:#aaa}
+.qrow .qlabel{font-size:11px;color:#666;margin-top:3px}
+.save-slot{background:#0d0d1f;border:1px solid #2a2a4a;border-radius:7px;padding:8px 12px;margin:4px 0;display:flex;align-items:center;justify-content:space-between}
+.save-slot button{padding:5px 12px;background:#0f3460;border:1px solid #444;border-radius:5px;color:#e8d5a3;cursor:pointer;font-size:12px}
+.save-slot button:hover{background:#16213e}
+.stbar{display:flex;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+</style>
+</head>
+<body>
+<div id="rpg">
+<div id="title-sc" class="sc on">
+  <div style="font-size:44px;margin:16px 0">⚔️🏰🐉</div>
+  <h1>REALM OF SHADOWS</h1>
+  <div class="sub">剣と魔法の本格ファンタジーRPG</div>
+  <div style="color:#666;font-size:12px;margin-bottom:20px">3フロア・ボス戦・スキル・クエスト・セーブ機能搭載</div>
+  <button class="start-btn" onclick="startGame()">🗡 冒険を始める</button>
+  <br>
+  <button class="ebtn" style="margin-top:12px;font-size:13px" onclick="loadGame()">💾 セーブデータを読む</button>
+  <div style="margin-top:24px;color:#444;font-size:11px">移動：矢印キー or D字ボタン</div>
+</div>
+
+<div id="map-sc" class="sc">
+  <div id="hud">
+    <div class="hi">❤️<div class="bw"><div class="bar"><div class="bf hpb" id="hpb"></div></div></div></div>
+    <div class="hi">💧<div class="bw"><div class="bar"><div class="bf mpb" id="mpb"></div></div></div></div>
+    <div class="hi">⭐Lv<span id="lvd">1</span><div class="bw"><div class="bar"><div class="bf xpb" id="xpb"></div></div></div></div>
+    <div class="hi">💰<b id="gd">0</b>G</div>
+    <div class="hi">⚔️<b id="atkd">5</b> 🛡<b id="defd">2</b></div>
+    <div class="hi">🗺F<b id="fld">1</b></div>
+  </div>
+  <div id="mc"></div>
+  <div id="log"></div>
+  <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+    <div>
+      <div class="dpad">
+        <div></div><button onclick="move(0,-1)">▲</button><div></div>
+        <button onclick="move(-1,0)">◀</button><div></div><button onclick="move(1,0)">▶</button>
+        <div></div><button onclick="move(0,1)">▼</button><div></div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:4px">
+        <button class="skill-btn" onclick="showSave()">💾</button>
+        <button class="skill-btn" onclick="showQuests()">📋</button>
+        <button class="skill-btn" onclick="showStats()">📊</button>
+      </div>
+    </div>
+    <div class="ivbox" style="flex:1;min-width:140px">
+      <div class="iv-title">🎒 アイテム</div>
+      <div id="ivl"></div>
+    </div>
+    <div class="ivbox" style="flex:1;min-width:140px">
+      <div class="iv-title">✨ スキル</div>
+      <div id="skl"></div>
+    </div>
+  </div>
+</div>
+
+<div id="battle-sc" class="sc">
+  <div id="bhud" style="background:#0d0d1f;border:1px solid #2a2a4a;border-radius:8px;padding:8px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="hi">❤️<div class="bw"><div class="bar"><div class="bf hpb" id="bhpb"></div></div></div></div>
+    <div class="hi">💧<div class="bw"><div class="bar"><div class="bf mpb" id="bmpb"></div></div></div></div>
+    <div class="hi">💰<b id="bgd">0</b>G</div>
+  </div>
+  <div style="position:relative;text-align:center">
+    <div class="mon" id="mart"></div>
+    <div id="enm" style="font-size:16px;color:#e94560;margin-bottom:3px"></div>
+    <div style="max-width:200px;margin:4px auto">
+      <div style="font-size:11px;color:#888;margin-bottom:2px">HP: <span id="ehpt"></span></div>
+      <div class="bar" style="height:10px"><div class="bf hpb" id="ehpb"></div></div>
+    </div>
+    <div id="phase-badge" style="font-size:11px;color:#9c27b0;margin-top:3px"></div>
+  </div>
+  <div class="pa" id="part">🧙</div>
+  <div id="log" style="max-width:340px;margin:6px auto"></div>
+  <div class="btns" id="battle-btns">
+    <button onclick="ba('attack')">⚔️ 攻撃</button>
+    <button onclick="ba('magic')">✨ 魔法(10MP)</button>
+    <button onclick="ba('skill')">🌟 スキル</button>
+    <button onclick="ba('item')">🧪 薬草</button>
+    <button onclick="ba('run')">🏃 逃走</button>
+  </div>
+  <div class="btns" id="skill-btns" style="display:none"></div>
+</div>
+
+<div id="shop-sc" class="sc">
+  <h2 style="color:#9c27b0;margin-bottom:8px">🏪 商店</h2>
+  <div id="shop-g" style="color:#f5a623;margin-bottom:10px"></div>
+  <div id="shop-items"></div>
+  <button class="ebtn" style="margin-top:10px" onclick="leaveShop()">店を出る</button>
+</div>
+
+<div id="npc-sc" class="sc">
+  <h2 style="color:#2196f3;margin-bottom:10px">💬 NPC</h2>
+  <div id="npc-text" style="background:#0d0d1f;border:1px solid #2a2a4a;border-radius:7px;padding:12px;font-size:14px;line-height:1.7;margin-bottom:10px"></div>
+  <button class="ebtn" onclick="leaveNPC()">閉じる</button>
+</div>
+
+<div id="quest-sc" class="sc">
+  <h2 style="color:#f5a623;margin-bottom:10px">📋 クエスト</h2>
+  <div id="qlist"></div>
+  <button class="ebtn" onclick="show('map-sc')">戻る</button>
+</div>
+
+<div id="stats-sc" class="sc">
+  <h2 style="color:#e8d5a3;margin-bottom:10px">📊 ステータス</h2>
+  <div id="stats-body"></div>
+  <button class="ebtn" onclick="show('map-sc')">戻る</button>
+</div>
+
+<div id="save-sc" class="sc">
+  <h2 style="color:#00bcd4;margin-bottom:10px">💾 セーブ / ロード</h2>
+  <div id="save-slots"></div>
+  <button class="ebtn" onclick="show('map-sc')">戻る</button>
+</div>
+
+<div id="go-sc" class="sc">
+  <div style="font-size:44px;margin:16px 0">💀</div>
+  <h2>ゲームオーバー</h2>
+  <p style="color:#888;margin-top:10px">勇者は倒れた…</p>
+  <button class="ebtn" onclick="startGame()">最初から</button>
+  <button class="ebtn" onclick="loadGame()">セーブからロード</button>
+</div>
+
+<div id="win-sc" class="sc">
+  <div style="font-size:44px;margin:16px 0">🏆</div>
+  <h2>クリア！</h2>
+  <div id="win-stats" style="color:#aaa;margin-top:10px;font-size:14px"></div>
+  <button class="ebtn" onclick="startGame()">ニューゲーム</button>
+</div>
+</div>
+
+<script>
+const MAPS=[
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+[1,0,1,1,0,0,1,0,1,1,0,1,0,1],
+[1,0,1,0,0,0,0,0,0,1,0,1,0,1],
+[1,0,0,0,1,1,0,1,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,1,0,0,1],
+[1,1,0,1,1,0,1,1,0,1,1,0,1,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,1,0,0,1,0,0,1,1,0,0,1],
+[1,0,0,1,0,0,0,0,0,1,0,0,0,1],
+[1,0,0,0,0,1,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,1,0,1,1,0,1,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+],
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,1,0,0,0,0,0,0,1,0,0,1],
+[1,0,0,1,0,1,1,0,1,0,1,0,0,1],
+[1,0,0,0,0,1,0,0,1,0,0,0,0,1],
+[1,1,1,0,1,1,0,0,0,1,0,1,1,1],
+[1,0,0,0,0,0,0,1,0,0,0,0,0,1],
+[1,0,1,1,0,1,0,1,1,0,1,1,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,0,0,1,0,0,0,1,0,0,0,1,1],
+[1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+[1,0,1,0,0,0,0,0,0,0,1,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,1,0,0,1,0,0,1,1,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+],
+[
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,1,1,0,1,0,1,1,1,0,0,1],
+[1,0,1,0,0,0,1,0,0,0,1,0,0,1],
+[1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+[1,0,0,0,1,0,0,0,1,0,0,0,0,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,0,0,1,0,0,0,0,0,1,0,0,0,1],
+[1,0,0,1,0,0,0,0,0,1,0,0,0,1],
+[1,0,0,0,1,1,0,1,1,0,0,0,0,1],
+[1,0,1,0,0,0,0,0,0,0,1,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,1,0,0,0,0,0,1,1,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+]
+];
+
+const ENEMIES=[
+{name:'スライム',   icon:'🟢',hp:22, maxhp:22, atk:5,  def:1, xp:18, gold:10},
+{name:'ゴブリン',   icon:'👺',hp:35, maxhp:35, atk:8,  def:2, xp:28, gold:16},
+{name:'コウモリ',   icon:'🦇',hp:28, maxhp:28, atk:9,  def:1, xp:25, gold:12},
+{name:'スケルトン', icon:'💀',hp:48, maxhp:48, atk:11, def:3, xp:45, gold:22},
+{name:'オーク',     icon:'👹',hp:60, maxhp:60, atk:14, def:4, xp:60, gold:30},
+{name:'魔法使い',   icon:'🧟',hp:40, maxhp:40, atk:18, def:2, xp:55, gold:35},
+];
+const BOSSES=[
+{name:'ゴブリンキング',icon:'👑',hp:120,maxhp:120,atk:16,def:5, xp:200,gold:80, phase2atk:22,phase2name:'【激怒】ゴブリンキング'},
+{name:'バンシー',      icon:'👻',hp:160,maxhp:160,atk:22,def:6, xp:280,gold:120,phase2atk:32,phase2name:'【覚醒】バンシー'},
+{name:'暗黒竜',        icon:'🐉',hp:250,maxhp:250,atk:30,def:8, xp:500,gold:200,phase2atk:45,phase2name:'【真の姿】暗黒竜'},
+];
+const SKILLS=[
+{id:'slash',  name:'烈風斬',  icon:'🌀',mpCost:15,desc:'ATK×2.5の斬撃',  dmgMul:2.5},
+{id:'fire',   name:'ファイア',icon:'🔥',mpCost:18,desc:'ATK×3の魔法炎',  dmgMul:3.0},
+{id:'thunder',name:'サンダー',icon:'⚡',mpCost:22,desc:'ATK×3.5+麻痺',  dmgMul:3.5,stun:true},
+{id:'heal',   name:'回復魔法',icon:'💚',mpCost:20,desc:'最大HP×40%回復', heal:0.4},
+{id:'guard',  name:'鉄壁',    icon:'🛡',mpCost:12,desc:'次のダメージ-70%',guard:true},
+];
+const SHOP_ITEMS=[
+{name:'薬草',      icon:'🧪',desc:'HP+30',     cost:20, type:'heal',  val:30},
+{name:'大回復薬',  icon:'⚗️', desc:'HP+80',     cost:55, type:'heal',  val:80},
+{name:'エリクサー',icon:'💎',desc:'HP+150',    cost:120,type:'heal',  val:150},
+{name:'MP回復薬',  icon:'💧',desc:'MP+30',     cost:30, type:'mpHeal',val:30},
+{name:'ハイMP薬',  icon:'🔵',desc:'MP+60',     cost:60, type:'mpHeal',val:60},
+{name:'鉄の剣',   icon:'⚔️', desc:'ATK+6',     cost:70, type:'atk',  val:6},
+{name:'銀の剣',   icon:'🗡', desc:'ATK+12',    cost:160,type:'atk',  val:12},
+{name:'鎖かたびら',icon:'🛡',desc:'DEF+5',     cost:90, type:'def',  val:5},
+{name:'プレートアーマー',icon:'🪖',desc:'DEF+10',cost:200,type:'def', val:10},
+{name:'MP結晶',   icon:'🔮',desc:'最大MP+20', cost:80, type:'maxMp', val:20},
+];
+const QUESTS=[
+{id:'q1',name:'最初の討伐',desc:'スライムを3体倒せ',  type:'kill',target:'スライム',need:3,  reward:{gold:50, item:'薬草'},   done:false,progress:0},
+{id:'q2',name:'ゴブリン退治',desc:'ゴブリンを3体倒せ',type:'kill',target:'ゴブリン',need:3,  reward:{gold:80, item:'MP回復薬'},done:false,progress:0},
+{id:'q3',name:'宝箱ハンター',desc:'宝箱を5つ開けよ',  type:'chest',need:5,                   reward:{gold:100},               done:false,progress:0},
+{id:'q4',name:'金持ちへの道',desc:'200Gを集めよ',      type:'gold', need:200,                  reward:{item:'鉄の剣'},          done:false,progress:0},
+{id:'q5',name:'ボス討伐I',   desc:'1階のボスを倒せ',   type:'boss', need:1,  bossFloor:0,       reward:{gold:200,item:'大回復薬'},done:false,progress:0},
+{id:'q6',name:'伝説の勇者', desc:'全ボスを倒せ',       type:'bossAll',need:3,                  reward:{gold:500},               done:false,progress:0},
+];
+const NPCS=[
+'勇者よ、この先には強力なボスが待ち受けている。回復アイテムを揃えてから挑むのじゃぞ。\n\n🗝 ヒント：宝箱には薬草だけでなく、スキルが入っていることもある！',
+'この階の奥には古の魔物が眠っておる。スキルを駆使して戦うのじゃ。\n\n🗝 ヒント：スキル「鉄壁」を使えばボスの大技もやり過ごせるぞ！',
+'最後の試練に立ち向かう者よ、勇気ある魂に加護があらんことを。\n\n🗝 ヒント：暗黒竜はHP半分から第二形態になる。準備万端で挑め！',
+];
+
+let P,mapData,floor,enemy,inBattle,guardNext,bossPhase2,battleLocked;
+let chestCount=0,bossesDefeated=0;
+let Q;
+
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('#rpg .sc').forEach(s=>s.classList.remove('on'));$(id).classList.add('on')}
+function log(msg,cls=''){const l=$('log');if(!l)return;const p=document.createElement('p');if(cls)p.className=cls;p.textContent=msg;l.appendChild(p);l.scrollTop=l.scrollHeight;while(l.children.length>18)l.removeChild(l.firstChild)}
+
+function startGame(){
+  floor=0;chestCount=0;bossesDefeated=0;guardNext=false;bossPhase2=false;
+  P={x:1,y:1,hp:100,maxHp:100,mp:40,maxMp:40,atk:10,def:4,xp:0,xpNext:60,level:1,gold:30,
+     inventory:['薬草','薬草','MP回復薬'],
+     skills:['slash','heal'],
+     kills:{},totalKills:0,steps:0};
+  Q=JSON.parse(JSON.stringify(QUESTS));
+  loadFloor(0);show('map-sc');
+  log('⚔️ 闇の王国への冒険が始まった！','c');
+}
+
+function loadFloor(f){
+  floor=f;
+  const base=JSON.parse(JSON.stringify(MAPS[f]));
+  mapData=base.map(row=>row.map(v=>({type:v===1?'wall':'floor',obj:null,vis:false})));
+  const ec=[4,6,8][f],cc=[3,4,5][f];
+  placeRand(ec,'enemy');placeRand(cc,'chest');
+  const bx=[12,12,12],by=[12,12,12];
+  mapData[by[f]][bx[f]].obj='boss';
+  if(f<MAPS.length-1){mapData[12][1].obj='exit';}
+  mapData[1][12].obj='shop';
+  mapData[6][1].obj='npc';
+  if(f>0)mapData[1][6].obj='save';
+  mapData[P.y][P.x].obj='player';
+  updateFOV();renderMap();updateHUD();
+}
+
+function placeRand(n,type){
+  let placed=0,tries=0;
+  while(placed<n&&tries<300){
+    tries++;
+    const x=1+Math.floor(Math.random()*12),y=1+Math.floor(Math.random()*12);
+    const c=mapData[y]?.[x];
+    if(c&&c.type==='floor'&&!c.obj&&!(x===P.x&&y===P.y)){c.obj=type;placed++;}
+  }
+}
+
+function updateFOV(){
+  const R=4;
+  for(let y=0;y<mapData.length;y++)for(let x=0;x<mapData[0].length;x++)mapData[y][x].vis=false;
+  for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+    if(dx*dx+dy*dy>R*R)continue;
+    const nx=P.x+dx,ny=P.y+dy;
+    if(mapData[ny]?.[nx])mapData[ny][nx].vis=true;
+  }
+}
+
+function renderMap(){
+  const mc=$('mc');
+  mc.style.gridTemplateColumns=`repeat(${mapData[0].length},36px)`;
+  mc.innerHTML='';
+  const icons={player:'🧙',chest:'📦',enemy:'👾',boss:'👑',exit:'🚪',shop:'🏪',npc:'🗣',save:'💾'};
+  mapData.forEach((row,y)=>row.forEach((cell,x)=>{
+    const d=document.createElement('div');
+    if(!cell.vis){d.className='tile dark';mc.appendChild(d);return;}
+    d.className='tile '+(cell.type==='wall'?'wall':cell.obj||'floor');
+    d.textContent=cell.type==='wall'?'🧱':(icons[cell.obj]||'');
+    mc.appendChild(d);
+  }));
+}
+
+function updateHUD(){
+  $('hpb').style.width=(P.hp/P.maxHp*100)+'%';
+  $('mpb').style.width=(P.mp/P.maxMp*100)+'%';
+  $('xpb').style.width=(P.xp/P.xpNext*100)+'%';
+  $('lvd').textContent=P.level;$('gd').textContent=P.gold;
+  $('atkd').textContent=P.atk;$('defd').textContent=P.def;
+  $('fld').textContent=floor+1;
+  renderInv();renderSkills();checkQuests();
+}
+
+function renderInv(){
+  const inv=$('ivl');if(!inv)return;
+  if(!P.inventory.length){inv.innerHTML='<span style="color:#555;font-size:11px">なし</span>';return;}
+  const cnt={};P.inventory.forEach(i=>cnt[i]=(cnt[i]||0)+1);
+  inv.innerHTML=Object.entries(cnt).map(([n,c])=>`<span class="itm" onclick="useItemMap('${n}')">${n}×${c}</span>`).join('');
+}
+
+function renderSkills(){
+  const sk=$('skl');if(!sk)return;
+  sk.innerHTML=P.skills.map(id=>{
+    const s=SKILLS.find(s=>s.id===id);
+    return s?`<button class="skill-btn" title="${s.desc}">${s.icon}${s.name}(${s.mpCost}MP)</button>`:''
+  }).join('');
+}
+
+function useItemMap(name){
+  const idx=P.inventory.indexOf(name);if(idx===-1)return;
+  P.inventory.splice(idx,1);
+  if(name==='MP回復薬'||name==='ハイMP薬'){
+    const v=name==='ハイMP薬'?60:30;
+    P.mp=Math.min(P.maxMp,P.mp+v);log(`💧 ${name}でMP+${v}！`,'g');
+  } else {
+    const v={薬草:30,大回復薬:80,エリクサー:150}[name]||30;
+    P.hp=Math.min(P.maxHp,P.hp+v);log(`🧪 ${name}でHP+${v}！`,'g');
+  }
+  updateHUD();
+}
+
+function move(dx,dy){
+  if(inBattle)return;
+  const nx=P.x+dx,ny=P.y+dy;
+  const cell=mapData[ny]?.[nx];
+  if(!cell||cell.type==='wall')return;
+  const obj=cell.obj;
+  if(obj==='enemy'){startBattle(nx,ny,false);return;}
+  if(obj==='boss'){startBattle(nx,ny,true);return;}
+  if(obj==='chest'){openChest(nx,ny);}
+  if(obj==='exit'){nextFloor();return;}
+  if(obj==='shop'){enterShop();return;}
+  if(obj==='npc'){enterNPC();return;}
+  if(obj==='save'){showSave();return;}
+  mapData[P.y][P.x].obj=null;
+  P.x=nx;P.y=ny;P.steps++;
+  mapData[ny][nx].obj='player';
+  updateFOV();renderMap();
+}
+
+function openChest(x,y){
+  chestCount++;
+  mapData[y][x].obj=null;
+  const r=Math.random();
+  if(r<0.25){P.inventory.push('薬草');log('📦 薬草を入手！','g');}
+  else if(r<0.4){P.inventory.push('大回復薬');log('📦 大回復薬を入手！','g');}
+  else if(r<0.5){P.inventory.push('MP回復薬');log('📦 MP回復薬を入手！','g');}
+  else if(r<0.6){
+    const sc=SKILLS.find(s=>!P.skills.includes(s.id));
+    if(sc){P.skills.push(sc.id);log(`📦 スキル「${sc.name}」を習得！`,'b');}
+    else{const g=20+Math.floor(Math.random()*30*(floor+1));P.gold+=g;log(`📦 ${g}Gを入手！`,'y');}
+  } else {
+    const g=15+Math.floor(Math.random()*25*(floor+1));P.gold+=g;log(`📦 ${g}Gを入手！`,'y');
+  }
+  updateHUD();
+}
+
+function nextFloor(){
+  if(floor>=MAPS.length-1){winGame();return;}
+  floor++;P.x=1;P.y=1;
+  log(`🚪 ${floor+1}階へ進んだ！`,'c');
+  loadFloor(floor);show('map-sc');
+}
+
+function enterShop(){show('shop-sc');renderShop();}
+function enterNPC(){$('npc-text').textContent=NPCS[floor]||NPCS[0];show('npc-sc');}
+function leaveNPC(){show('map-sc');}
+function leaveShop(){show('map-sc');updateHUD();}
+
+function renderShop(){
+  $('shop-g').textContent=`所持金：${P.gold}G`;
+  $('shop-items').innerHTML=SHOP_ITEMS.map((it,i)=>
+    `<div class="shoprow"><span>${it.icon} <b>${it.name}</b> ${it.desc}</span><button ${P.gold<it.cost?'disabled':''} onclick="buyItem(${i})">${it.cost}G 購入</button></div>`
+  ).join('');
+}
+
+function buyItem(i){
+  const it=SHOP_ITEMS[i];if(P.gold<it.cost)return;
+  P.gold-=it.cost;
+  if(it.type==='heal'||it.type==='mpHeal'){P.inventory.push(it.name);}
+  else if(it.type==='atk'){P.atk+=it.val;log(`⚔️ ATK+${it.val}！`,'g');}
+  else if(it.type==='def'){P.def+=it.val;log(`🛡 DEF+${it.val}！`,'g');}
+  else if(it.type==='maxMp'){P.maxMp+=it.val;P.mp=Math.min(P.maxMp,P.mp+it.val);log(`🔮 最大MP+${it.val}！`,'b');}
+  renderShop();
+}
+
+function startBattle(ex,ey,isBoss){
+  inBattle=true;guardNext=false;bossPhase2=false;battleLocked=false;
+  const pool=isBoss?null:ENEMIES.slice(0,3+floor*2);
+  enemy=JSON.parse(JSON.stringify(isBoss?BOSSES[floor]:pool[Math.floor(Math.random()*pool.length)]));
+  enemy.ex=ex;enemy.ey=ey;enemy.isBoss=isBoss;
+  $('mart').textContent=enemy.icon;
+  $('mart').className='mon';
+  $('enm').textContent=enemy.name+(isBoss?' 【ボス】':'');
+  $('phase-badge').textContent='';
+  updateBattleHUD();
+  show('battle-sc');
+  log(`${isBoss?'🔥':'⚔️'} ${enemy.name}が現れた！`,'r');
+  $('skill-btns').style.display='none';
+  $('battle-btns').style.display='flex';
+}
+
+function updateBattleHUD(){
+  $('bhpb').style.width=(P.hp/P.maxHp*100)+'%';
+  $('bmpb').style.width=(P.mp/P.maxMp*100)+'%';
+  $('bgd').textContent=P.gold;
+  $('ehpt').textContent=`${enemy.hp}/${enemy.maxhp}`;
+  $('ehpb').style.width=(enemy.hp/enemy.maxhp*100)+'%';
+}
+
+function ba(act){
+  if(battleLocked)return;
+  if(act==='skill'){
+    $('battle-btns').style.display='none';
+    const sb=$('skill-btns');
+    sb.style.display='flex';
+    sb.innerHTML=P.skills.map(id=>{
+      const s=SKILLS.find(s=>s.id===id);
+      return s?`<button onclick="useSkill('${id}')" ${P.mp<s.mpCost?'disabled':''}>${s.icon}${s.name}(${s.mpCost}MP)</button>`:''
+    }).join('')+'<button onclick="cancelSkill()">キャンセル</button>';
+    return;
+  }
+  let dmg=0;
+  if(act==='attack'){
+    dmg=Math.max(1,P.atk-enemy.def+Math.floor(Math.random()*6));
+    enemy.hp-=dmg;
+    $('part').className='pa at';setTimeout(()=>{$('part').className='pa';},380);
+    log(`⚔️ ${dmg}ダメージ！`,'g');
+  } else if(act==='magic'){
+    if(P.mp<10){log('💧 MPが足りない！','r');return;}
+    P.mp-=10;
+    dmg=Math.floor(P.atk*2+Math.random()*8);
+    enemy.hp-=dmg;
+    log(`✨ 魔法で${dmg}ダメージ！`,'b');
+  } else if(act==='item'){
+    const idx=P.inventory.indexOf('薬草');
+    if(idx===-1){const idx2=P.inventory.indexOf('大回復薬');
+      if(idx2===-1){log('🧪 回復アイテムがない！','r');return;}
+      P.inventory.splice(idx2,1);P.hp=Math.min(P.maxHp,P.hp+80);log('⚗️ 大回復薬でHP+80！','g');
+    } else {
+      P.inventory.splice(idx,1);P.hp=Math.min(P.maxHp,P.hp+30);log('🧪 薬草でHP+30！','g');
+    }
+    updateBattleHUD();
+  } else if(act==='run'){
+    if(enemy.isBoss){log('🚫 ボスからは逃げられない！','r');return;}
+    if(Math.random()<0.45){log('🏃 逃走成功！','c');endBattle(false);return;}
+    else log('逃げられなかった！','r');
+  }
+  if(enemy.hp<=0){
+    $('mart').className='mon sk';
+    battleLocked=true;
+    setTimeout(()=>battleWin(),500);
+    return;
+  }
+  if(enemy.isBoss&&!bossPhase2&&enemy.hp<=enemy.maxhp/2){
+    bossPhase2=true;
+    enemy.atk=enemy.phase2atk;
+    $('enm').textContent=enemy.phase2name;
+    $('phase-badge').textContent='⚡ フェーズ2突入！攻撃力上昇！';
+    log(`💥 ${enemy.phase2name}！怒りが爆発した！`,'r');
+  }
+  enemyTurn();
+}
+
+function useSkill(id){
+  const s=SKILLS.find(s=>s.id===id);if(!s||P.mp<s.mpCost)return;
+  P.mp-=s.mpCost;
+  $('skill-btns').style.display='none';
+  $('battle-btns').style.display='flex';
+  if(s.guard){guardNext=true;log(`🛡 鉄壁！次のダメージを大幅軽減！`,'b');}
+  else if(s.heal){const h=Math.floor(P.maxHp*s.heal);P.hp=Math.min(P.maxHp,P.hp+h);log(`💚 ${s.name}でHP+${h}！`,'g');}
+  else {
+    let dmg=Math.floor(P.atk*s.dmgMul+Math.random()*10);
+    enemy.hp-=dmg;
+    log(`${s.icon} ${s.name}で${dmg}の大ダメージ！`,'b');
+    if(s.stun&&Math.random()<0.4){log('⚡ 敵が麻痺した！（1ターン休み）','c');updateBattleHUD();if(enemy.hp<=0){battleLocked=true;$('mart').className='mon sk';setTimeout(()=>battleWin(),500);}return;}
+  }
+  if(enemy.hp<=0){battleLocked=true;$('mart').className='mon sk';setTimeout(()=>battleWin(),500);return;}
+  if(enemy.isBoss&&!bossPhase2&&enemy.hp<=enemy.maxhp/2){
+    bossPhase2=true;enemy.atk=enemy.phase2atk;
+    $('enm').textContent=enemy.phase2name;
+    $('phase-badge').textContent='⚡ フェーズ2突入！';
+    log(`💥 ${enemy.phase2name}に変貌！`,'r');
+  }
+  enemyTurn();
+}
+
+function cancelSkill(){$('skill-btns').style.display='none';$('battle-btns').style.display='flex';}
+
+function enemyTurn(){
+  let edm=Math.max(1,enemy.atk-P.def+Math.floor(Math.random()*5));
+  if(guardNext){edm=Math.max(1,Math.floor(edm*0.3));guardNext=false;log(`🛡 鉄壁で${edm}ダメージに軽減！`,'g');}
+  else log(`👾 ${enemy.name}の攻撃！${edm}ダメージ！`,'r');
+  P.hp-=edm;
+  updateBattleHUD();
+  if(P.hp<=0){setTimeout(()=>show('go-sc'),500);}
+}
+
+function battleWin(){
+  P.gold+=enemy.gold;P.xp+=enemy.xp;
+  P.kills[enemy.name]=(P.kills[enemy.name]||0)+1;P.totalKills++;
+  log(`🏆 勝利！${enemy.xp}XP・${enemy.gold}G獲得！`,'y');
+  if(enemy.isBoss){bossesDefeated++;log(`🌟 ボス討伐！`,'b');}
+  while(P.xp>=P.xpNext)levelUp();
+  mapData[enemy.ey][enemy.ex].obj=null;
+  endBattle(true);
+  checkQuestProgress();
+}
+
+function levelUp(){
+  P.xp-=P.xpNext;P.level++;P.xpNext=Math.floor(P.xpNext*1.6);
+  P.maxHp+=18;P.hp=P.maxHp;P.maxMp+=10;P.mp=P.maxMp;P.atk+=4;P.def+=2;
+  if(P.level%3===0){const sc=SKILLS.find(s=>!P.skills.includes(s.id));if(sc){P.skills.push(sc.id);log(`⭐ Lv.${P.level}！スキル「${sc.name}」習得！`,'b');}else log(`⭐ レベルアップ！Lv.${P.level}！`,'b');}
+  else log(`⭐ レベルアップ！Lv.${P.level}！HP・MP全回復！`,'b');
+}
+
+function endBattle(won){
+  inBattle=false;guardNext=false;
+  if(won){mapData[P.y][P.x].obj=null;P.x=enemy.ex;P.y=enemy.ey;mapData[P.y][P.x].obj='player';}
+  show('map-sc');updateFOV();renderMap();updateHUD();
+}
+
+function checkQuestProgress(){
+  Q.forEach(q=>{
+    if(q.done)return;
+    if(q.type==='kill'&&(P.kills[q.target]||0)>=q.need)completeQuest(q);
+    if(q.type==='chest'&&chestCount>=q.need)completeQuest(q);
+    if(q.type==='gold'&&P.gold>=q.need)completeQuest(q);
+    if(q.type==='boss'&&enemy.isBoss&&floor===q.bossFloor)completeQuest(q);
+    if(q.type==='bossAll'&&bossesDefeated>=q.need)completeQuest(q);
+  });
+}
+
+function checkQuests(){Q.forEach(q=>{if(!q.done){if(q.type==='gold'&&P.gold>=q.need)completeQuest(q);}});}
+
+function completeQuest(q){
+  q.done=true;q.progress=q.need;
+  log(`📋 クエスト完了：${q.name}！`,'y');
+  if(q.reward.gold){P.gold+=q.reward.gold;log(`💰 報酬：${q.reward.gold}G！`,'y');}
+  if(q.reward.item){P.inventory.push(q.reward.item);log(`🎁 報酬：${q.reward.item}を入手！`,'g');}
+  updateHUD();
+}
+
+function showQuests(){
+  const ql=$('qlist');
+  ql.innerHTML=Q.map(q=>{
+    const prog=getQuestProg(q);
+    return `<div class="qrow ${q.done?'done':''}">
+      <b>${q.done?'✅':'🔲'} ${q.name}</b>
+      <div class="qlabel">${q.desc}　${prog}</div>
+      ${q.done?'':'<div class="qlabel" style="color:#f5a623">報酬: '+rewardText(q.reward)+'</div>'}
+    </div>`;
+  }).join('');
+  show('quest-sc');
+}
+
+function getQuestProg(q){
+  if(q.done)return '完了';
+  if(q.type==='kill')return `(${P.kills[q.target]||0}/${q.need})`;
+  if(q.type==='chest')return `(${chestCount}/${q.need})`;
+  if(q.type==='gold')return `(${P.gold}/${q.need}G)`;
+  if(q.type==='boss'||q.type==='bossAll')return `(${bossesDefeated}/${q.need})`;
+  return '';
+}
+
+function rewardText(r){const parts=[];if(r.gold)parts.push(r.gold+'G');if(r.item)parts.push(r.item);return parts.join('・');}
+
+function showStats(){
+  $('stats-body').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
+      <div class="stbar">❤️ HP <b>${P.hp}/${P.maxHp}</b></div>
+      <div class="stbar">💧 MP <b>${P.mp}/${P.maxMp}</b></div>
+      <div class="stbar">⚔️ ATK <b>${P.atk}</b></div>
+      <div class="stbar">🛡 DEF <b>${P.def}</b></div>
+      <div class="stbar">⭐ Lv <b>${P.level}</b></div>
+      <div class="stbar">💰 Gold <b>${P.gold}</b></div>
+      <div class="stbar">💀 討伐数 <b>${P.totalKills}</b></div>
+      <div class="stbar">👣 歩数 <b>${P.steps}</b></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#888">
+      <div style="margin-bottom:4px">✨ 習得スキル：</div>
+      ${P.skills.map(id=>{const s=SKILLS.find(s=>s.id===id);return s?`<span class="itm">${s.icon}${s.name}</span>`:''}).join('')}
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:#888">
+      <div style="margin-bottom:4px">🎒 アイテム：</div>
+      ${(()=>{const cnt={};P.inventory.forEach(i=>cnt[i]=(cnt[i]||0)+1);return Object.entries(cnt).map(([n,c])=>`<span class="itm">${n}×${c}</span>`).join('')||'<span style="color:#555">なし</span>'})()}
+    </div>`;
+  show('stats-sc');
+}
+
+function showSave(){
+  const slots=$('save-slots');
+  slots.innerHTML='<div class="iv-title" style="margin-bottom:8px">セーブスロット（ブラウザに保存）</div>';
+  for(let i=1;i<=3;i++){
+    const key=`rpg_save_${i}`;
+    let info='空きスロット';
+    try{const d=JSON.parse(localStorage.getItem(key));if(d)info=`Lv.${d.P.level} F${d.floor+1} ${d.ts}`;}catch(e){}
+    const div=document.createElement('div');
+    div.className='save-slot';
+    div.innerHTML=`<span style="font-size:13px">スロット${i}: <span style="color:#aaa">${info}</span></span>
+      <div style="display:flex;gap:6px">
+        <button onclick="saveGame(${i})">💾 保存</button>
+        <button onclick="loadSlot(${i})">📂 読込</button>
+      </div>`;
+    slots.appendChild(div);
+  }
+  show('save-sc');
+}
+
+function saveGame(slot){
+  if(!P){alert('ゲームを開始してからセーブしてください');return;}
+  const ts=new Date().toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const data={P,floor,Q,chestCount,bossesDefeated,ts};
+  try{
+    localStorage.setItem(`rpg_save_${slot}`,JSON.stringify(data));
+    log(`💾 スロット${slot}にセーブ完了！`,'c');
+    showSave();
+  }catch(e){log('⚠️ セーブに失敗','r');}
+}
+
+function loadSlot(slot){
+  try{
+    const d=JSON.parse(localStorage.getItem(`rpg_save_${slot}`));
+    if(!d){alert('セーブデータがありません');return;}
+    P=d.P;floor=d.floor;Q=d.Q;chestCount=d.chestCount||0;bossesDefeated=d.bossesDefeated||0;
+    guardNext=false;bossPhase2=false;inBattle=false;
+    loadFloor(floor);show('map-sc');
+    log(`📂 スロット${slot}からロード完了！`,'c');
+  }catch(e){alert('セーブデータの読み込みに失敗しました');}
+}
+
+function loadGame(){
+  let found=false;
+  for(let i=1;i<=3;i++){
+    try{if(localStorage.getItem(`rpg_save_${i}`)){found=true;break;}}catch(e){}
+  }
+  if(!found){alert('セーブデータが見つかりません');return;}
+  if(!P){P={level:1};floor=0;}
+  showSave();
+}
+
+function winGame(){
+  $('win-stats').innerHTML=`Lv.${P.level} / 総討伐数:${P.totalKills} / 総歩数:${P.steps}<br>所持金:${P.gold}G / クエスト完了:${Q.filter(q=>q.done).length}/${Q.length}`;
+  show('win-sc');
+}
+
+document.addEventListener('keydown',e=>{
+  const km={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
+  const d=km[e.key];if(d){e.preventDefault();move(d[0],d[1]);}
+});
+</script>
+</body>
+</html>
